@@ -1,0 +1,79 @@
+spring:
+  application:
+    name: hrms-admin
+  profiles:
+    active: ${PROFILE:dev}
+  config:
+    import:
+      - file:${ENV_FILE_PATH:config/docker/.env}[.properties]
+      - file:${FLYWAY_PROPERTIES_PATH:config/flyway.properties}
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  docker:
+    compose:
+      enabled: false
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:hrm}
+    username: ${MYSQL_USER}
+    password: ${MYSQL_PASSWORD}
+  data:
+    redis:
+      database: 3
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
+  flyway:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT}/${MYSQL_DATABASE}
+    user: ${MYSQL_USER}
+    password: ${MYSQL_PASSWORD}
+    baseline-on-migrate: ${flyway.baselineOnMigrate}
+    baseline-version: ${flyway.baselineVersion}
+    clean-disabled: ${flyway.cleanDisabled:true}
+  mail:
+    host: ${EMAIL_HOST}
+    port: ${EMAIL_PORT:587}
+    username: ${EMAIL_USERNAME}
+    password: ${EMAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          from: ${EMAIL_USERNAME}@${EMAIL_HOST}
+          auth: true
+          starttls:
+            enable: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+springdoc:
+  packagesToScan: com.hrms.controller
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    showCommonExtensions: true
+
+mybatis:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+logging:
+  file:
+    path: /opt/logs/
+#soyal:
+#  socket:
+#    port: ${SOYAL_SOCKET_PORT:8031}
+#    allowIps: ${SOYAL_SOCKET_ALLOW_IPS:127.0.0.1}
+file:
+  root:
+    dir: ${FILE_ROOT_DIR:hrmFiles}

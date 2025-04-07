@@ -1,0 +1,20 @@
+spring:
+  config:
+    import:
+      - file:${ENV_FILE_PATH:config/docker/.env}[.properties]
+      - file:${FLYWAY_PROPERTIES_PATH:config/flyway.properties}
+      - optional:file:config/dev/docker/.env[.properties]
+      - optional:file:config/dev/flyway.properties
+      - optional:file:config/dev/custom.yml
+  docker:
+    compose:
+      enabled: true
+      file: config/docker/compose.yml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
