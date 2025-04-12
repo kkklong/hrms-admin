@@ -7,6 +7,7 @@ target/
 config/dev/
 config/docker/data/
 tmp
+/LOG_PATH_IS_UNDEFINED/
 
 ### STS ###
 .apt_generated
