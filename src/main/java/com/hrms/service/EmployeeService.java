@@ -2,7 +2,9 @@ package com.hrms.service;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hrms.entity.Employee;
+import com.hrms.model.UserInfo;
 import com.hrms.repository.EmployeeRepository;
+import com.hrms.model.RolePermission;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -41,8 +43,17 @@ public class EmployeeService extends ServiceImpl<EmployeeRepository, Employee> {
 //    @Resource
 //    private DepartmentRepository departmentRepository;
 //
+    // --------Account Info--------
     public Employee getByAccount(String account) {
         return employeeRepository.getByAccount(account);
+    }
+
+    public RolePermission getRolePermission(String account) {
+        return employeeRepository.getRolePermission(account);
+    }
+
+    public UserInfo getUserInfo(String account) {
+        return employeeRepository.getUserInfo(account);
     }
 //
 //    public void createEmployee(CreateEmployeeBO createEmployeeBO) {
@@ -135,13 +146,7 @@ public class EmployeeService extends ServiceImpl<EmployeeRepository, Employee> {
 //        return queryEmployeeVOs;
 //    }
 //
-//    public RolePermission getRolePermission(String account) {
-//        return employeeRepository.getRolePermission(account);
-//    }
-//
-//    public UserInfo getUserInfo(String account) {
-//        return employeeRepository.getUserInfo(account);
-//    }
+
 //
 //    @Transactional
 //    public void delete(Integer id) {

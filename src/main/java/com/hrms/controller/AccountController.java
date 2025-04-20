@@ -1,6 +1,7 @@
 package com.hrms.controller;
 
 import com.hrms.common.ApiResponse;
+import com.hrms.model.UserInfo;
 import com.hrms.model.bo.LoginBO;
 import com.hrms.model.vo.LoginVO;
 import com.hrms.service.LoginService;
@@ -9,10 +10,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.apache.shiro.SecurityUtils;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/account")
@@ -30,5 +29,19 @@ public class AccountController {
         LoginVO loginVo = new LoginVO();
         loginVo.setAccessToken(token);
         return new ApiResponse<>(loginVo);
+    }
+
+    @Operation(summary = "用戶登出", description = "用戶登出API")
+    @PostMapping(path = "/logout")
+    public ApiResponse logout() {
+        loginService.logout();
+        return new ApiResponse<>("登出成功");
+    }
+
+    @Operation(summary = "取得當前登入者的訊息", description = "取得當前登入者的訊息API")
+    @GetMapping(path = "/currentEmployee")
+    public ApiResponse<UserInfo> getCurrentEmployee() {
+        UserInfo userInfo = (UserInfo) SecurityUtils.getSubject().getPrincipal();
+        return new ApiResponse<>(userInfo);
     }
 }
