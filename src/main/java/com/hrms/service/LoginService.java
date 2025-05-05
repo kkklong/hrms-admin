@@ -3,6 +3,7 @@ package com.hrms.service;
 import com.hrms.entity.Employee;
 import com.hrms.enums.ErrorCode;
 import com.hrms.exception.ServiceException;
+import com.hrms.model.UserInfo;
 import com.hrms.model.bo.LoginBO;
 import com.hrms.util.EncryptionUtils;
 import jakarta.annotation.Resource;
@@ -50,5 +51,17 @@ public class LoginService {
     public void logout() {
         Subject currentUser = SecurityUtils.getSubject();
         currentUser.logout();
+    }
+
+    /**
+     * 取得登入者資料
+     */
+    public UserInfo getCurrentUserInfo() {
+        Subject currentUser = SecurityUtils.getSubject();
+        if (currentUser.isAuthenticated()) {
+            return (UserInfo) currentUser.getPrincipal();
+        } else {
+            return null;
+        }
     }
 }

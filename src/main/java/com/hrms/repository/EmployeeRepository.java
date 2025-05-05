@@ -7,8 +7,11 @@ import com.hrms.model.UserInfo;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.List;
+
 public interface EmployeeRepository extends BaseMapper<Employee> {
 
+    // --------Account Info--------
     @Select("""
             Select * from employee 
             where account = #{account}
@@ -31,4 +34,8 @@ public interface EmployeeRepository extends BaseMapper<Employee> {
             from employee a left join department b on a.department_id = b.id where a.account = #{account}
             """)
     UserInfo getUserInfo(@Param("account") String account);
+
+    // --------Query--------
+    @Select("select * from employee where department_id = #{departmentId}")
+    List<Employee> getByDepartmentId(@Param("departmentId") Integer departmentId);
 }

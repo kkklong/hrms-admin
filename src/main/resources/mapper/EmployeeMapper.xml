@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hrms.repository.EmployeeRepository">
+    <select id="getAllName" resultType="java.lang.String">
+        select full_name
+        from employee
+    </select>
+    <!-- 根據員工帳號查找員工-->
+    <select id="getByAccount" resultType="com.hrms.entity.Employee">
+        SELECT * FROM employee WHERE account = #{account}
+    </select>
+</mapper>
