@@ -52,6 +52,4 @@ public class DepartmentVO implements Serializable {
     @Schema(type = "Integer", description = "每日晚班最少上班人數")
     private Integer everyDayNightCount;
 
-    @Schema(type = "Byte", description = "所屬公司：0=共通, 1=TG, 2=EG")
-    private Byte company;
 }

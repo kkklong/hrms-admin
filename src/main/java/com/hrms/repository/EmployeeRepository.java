@@ -38,4 +38,10 @@ public interface EmployeeRepository extends BaseMapper<Employee> {
     // --------Query--------
     @Select("select * from employee where department_id = #{departmentId}")
     List<Employee> getByDepartmentId(@Param("departmentId") Integer departmentId);
+
+    // 查詢所有在職的員工
+    @Select("""
+            SELECT * FROM employee WHERE status = 1    
+            """)
+    List<Employee> findAllActiveEmployees();
 }

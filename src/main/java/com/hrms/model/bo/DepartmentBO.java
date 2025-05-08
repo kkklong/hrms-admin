@@ -47,8 +47,4 @@ public class DepartmentBO {
     @NotNull(message = "每日晚班最少上班人數不能為空")
     @Schema(type = "Integer", description = "每日晚班最少上班人數")
     private Integer everyDayNightCount;
-
-    @NotNull(message = "所屬公司不能為空")
-    @Schema(type = "Byte", description = "所屬公司：0=共通, 1=TG, 2=EG")
-    private Byte company;
 }

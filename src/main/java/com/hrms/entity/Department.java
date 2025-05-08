@@ -98,8 +98,4 @@ public class Department implements Serializable {
      */
     private Integer everyDayNightCount;
 
-    /**
-     * 所屬公司：0=共通, 1=TG, 2=EG
-     */
-    private Byte company;
 }
