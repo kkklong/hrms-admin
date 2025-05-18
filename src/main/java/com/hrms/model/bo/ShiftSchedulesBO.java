@@ -32,4 +32,7 @@ public class ShiftSchedulesBO implements Serializable {
     @Schema(type = "String", description = "班別")
     private String shiftTypes;
 
+    @Schema(type = "String", description = "備註，記錄額外信息，如特殊說明等")
+    private String remark;
+
 }
