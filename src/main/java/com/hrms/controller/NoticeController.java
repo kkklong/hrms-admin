@@ -93,6 +93,7 @@ public class NoticeController {
         return new ApiResponse<>(noticeVOs);
     }
 
+    // ---- 以status作為notice發布的開關 ----
     @PostMapping(path = "/enable/{noticeId}")
     public ApiResponse<String> enable(@PathVariable Integer noticeId) {
         noticeService.enable(noticeId);

@@ -130,9 +130,9 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
 
         LocalDate firstDate = shiftSchedules.getShiftDate().with(DayOfWeek.MONDAY);
         long days = ChronoUnit.DAYS.between(firstDate, periodStartDate);
-        log.info("periodStartDate: {}, firstDate: {}", periodStartDate, firstDate);
-        log.info("days: {}", days);
-        log.info("intValue: {}", shiftSchedules.getWeekType().intValue());
+//        log.info("periodStartDate: {}, firstDate: {}", periodStartDate, firstDate);
+//        log.info("days: {}", days);
+//        log.info("intValue: {}", shiftSchedules.getWeekType().intValue());
         if ((shiftSchedules.getWeekType().intValue() + days / 7) % 2 == 0) {
             periodStartDate = periodStartDate.minusWeeks(1);
         }
