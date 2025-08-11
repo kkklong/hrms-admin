@@ -51,7 +51,6 @@ public interface ShiftSchedulesRepository extends BaseMapper<ShiftSchedules> {
             		JOIN config d 
             		on a.shift_types = d.config_key 
             ${ew.customSqlSegment}
-            and c.role_id != 1
             group by b.department_name, c.nick_name
             """)
     List<ShiftSchedulesExcel> queryShiftSchedulesExcel(@Param(Constants.WRAPPER) QueryWrapper<ShiftSchedules> ew);
