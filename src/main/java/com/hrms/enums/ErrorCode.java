@@ -114,7 +114,23 @@ public enum ErrorCode {
     NOTIFICATION_DELETE_UNAUTHORIZED(1106, "只能刪除自己的通知"),
     INVALID_SHIFT_TYPE_CONFIG_KEY(1107, "班別配置無效，必須以 'SHIFT_TYPE_'作為前綴或'HOLIDAY'作為後綴"),
     INVALID_SHIFT_COLOR_CODE(1108, "不符合班別色碼格式"),
-    NO_GROUP_LEADER_OR_EMAIL_NOT_SET(1109, "該部門無組長或組長無設定信箱")
+    NO_GROUP_LEADER_OR_EMAIL_NOT_SET(1109, "該部門無組長或組長無設定信箱"),
+    LEAVE_RECORD_ALREADY_PROCESSED(1110, "此筆假單已審核完成，無法重複審核"),
+    REMOTE_ATTENDANCE_DATE_DUPLICATE(1111, "遠端打卡日期已存在，無法重複新增"),
+    REMOTE_ATTENDANCE_ID_NOT_FOUND(1112, "遠端打卡設定ID不存在"),
+    REMOTE_ATTENDANCE_DATE_CANNOT_MODIFY(1113, "遠端打卡日期設定不允許修改"),
+    REMOTE_CLOCK_DENIED(1114, "未開放遠端打卡"),
+    REMOTE_CLOCK_DUPLICATE(1115, "今日已遠端打卡，請勿重複打卡"),
+    REMOTE_CLOCK_TIME_ILLEGAL(1116, "不在允許的打卡時間範圍內"),
+    OVERTIME_DURATION_EXCEEDS_MAX_LIMIT_12(1117, "加班時數超過最大限制（12小時）"),
+    OPTIONAL_LEAVE_MUST_AFTER_LAST_ANNUAL_LEAVE(1118, "選休應在有效特休最後一筆日之後"),
+    OPTIONAL_LEAVE_ALREADY_APPLIED(1119, "目前已有申請選休假，如要撤銷特休，請先撤銷選休"),
+    INVALID_FLOW_TYPE(1120, "無效的流程類型"),
+    EMPTY_FLOW_VALUE(1121, "流程值不可為空"),
+    INVALID_FLOW_JSON(1122, "流程格式錯誤"),
+    INVALID_FLOW_HOUR(1123, "GE_24 / LT_24 不可為空"),
+    UNKNOWN_FLOW(1124, "未知流程"),
+    CAN_NOT_DELETE_PRESET(1125, "無法刪除預設"),
     ;
     private final int code;
     private final String message;
