@@ -11,7 +11,9 @@ import lombok.Getter;
 public enum ScopeType {
     EMPLOYEE("員工"),
     DEPARTMENT("部門"),
-    COMPANY("公司");
+    COMPANY("公司"),
+    GLOBAL("全局");
+
 
     private final String name;
 

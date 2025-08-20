@@ -11,6 +11,7 @@ import com.hrms.model.vo.CompanyVO;
 import com.hrms.model.vo.LeaveRecordApprovalStageVO;
 import com.hrms.model.vo.ReviewIntervalVO;
 import com.hrms.model.vo.ScopeTypeVO;
+import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
@@ -46,12 +47,14 @@ public interface ApprovalFlowConfigMapper {
     }
 
     default List<ScopeTypeVO> enumToScopeTypeVOs() {
-        return Arrays.stream(ScopeType.values())
+        List<ScopeTypeVO> list = Arrays.stream(ScopeType.values())
                 .map(e -> new ScopeTypeVO(
                         e.getName(),
                         e.name()
                 ))
                 .collect(Collectors.toList());
+        list.forEach(vo -> System.out.println("vo = " + vo ));
+        return list;
     }
 
     // Enum 轉 VO，過濾 COMMON
