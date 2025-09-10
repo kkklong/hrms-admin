@@ -113,42 +113,42 @@ public class EnumController {
 //        return new ApiResponse<>(data);
 //    }
 //
-//    @Operation(summary = "取得記薪標準列表", description = "取得記薪標準列表API")
-//    @GetMapping(path = "/getLeaveSpecialRecordSalaryStandard")
-//    public ApiResponse<List<DropDownVo<String>>> getLeaveSpecialRecordSalaryStandard() {
-//        List<DropDownVo<String>> data = Stream.of(LeaveSpecialRecordSalaryStandard.values())
-//                .map(stage -> new DropDownVo<>(stage.getName(), stage.getValue()))
-//                .collect(Collectors.toList());
-//        return new ApiResponse<>(data);
-//    }
-//
-//    @Operation(summary = "取得計算期間類型列表", description = "取得計算期間類型列表API")
-//    @GetMapping(path = "/getLeaveSpecialRecordCalculationPeriod")
-//    public ApiResponse<List<DropDownVo<String>>> getLeaveSpecialRecordCalculationPeriod() {
-//        List<DropDownVo<String>> data = Stream.of(LeaveSpecialRecordCalculationPeriod.values())
-//                .map(stage -> new DropDownVo<>(stage.getName(), stage.getValue()))
-//                .collect(Collectors.toList());
-//        return new ApiResponse<>(data);
-//    }
-//
-//    @Operation(summary = "取得假別列表", description = "取得假別列表API")
-//    @GetMapping(path = "/getLeaveType")
-//    public ApiResponse<List<DropDownVo<String>>> getLeaveType() {
-//        List<DropDownVo<String>> data = Stream.of(LeaveType.values())
-//                .map(leaveType -> new DropDownVo<>(leaveType.getChineseName(), leaveType.getLeaveType()))
-//                .collect(Collectors.toList());
-//        return new ApiResponse<>(data);
-//    }
-//
-//    @Operation(summary = "取得非自動排程的假別列表", description = "取得非自動排程的假別列表API")
-//    @GetMapping(path = "/getNonAutoScheduledLeaveType")
-//    public ApiResponse<List<DropDownVo<String>>> getNonAutoScheduledLeaveTypes() {
-//        List<DropDownVo<String>> data = Stream.of(LeaveType.values())
-//                .filter(leaveType -> !leaveType.isAutoScheduled())
-//                .map(leaveType -> new DropDownVo<>(leaveType.getChineseName(), leaveType.getLeaveType()))
-//                .collect(Collectors.toList());
-//        return new ApiResponse<>(data);
-//    }
+    @Operation(summary = "取得記薪標準列表", description = "取得記薪標準列表API")
+    @GetMapping(path = "/getLeaveSpecialRecordSalaryStandard")
+    public ApiResponse<List<DropDownVo<String>>> getLeaveSpecialRecordSalaryStandard() {
+        List<DropDownVo<String>> data = Stream.of(LeaveSpecialRecordSalaryStandard.values())
+                .map(stage -> new DropDownVo<>(stage.getName(), stage.getValue()))
+                .collect(Collectors.toList());
+        return new ApiResponse<>(data);
+    }
+
+    @Operation(summary = "取得計算期間類型列表", description = "取得計算期間類型列表API")
+    @GetMapping(path = "/getLeaveSpecialRecordCalculationPeriod")
+    public ApiResponse<List<DropDownVo<String>>> getLeaveSpecialRecordCalculationPeriod() {
+        List<DropDownVo<String>> data = Stream.of(LeaveSpecialRecordCalculationPeriod.values())
+                .map(stage -> new DropDownVo<>(stage.getName(), stage.getValue()))
+                .collect(Collectors.toList());
+        return new ApiResponse<>(data);
+    }
+
+    @Operation(summary = "取得假別列表", description = "取得假別列表API")
+    @GetMapping(path = "/getLeaveType")
+    public ApiResponse<List<DropDownVo<String>>> getLeaveType() {
+        List<DropDownVo<String>> data = Stream.of(LeaveType.values())
+                .map(leaveType -> new DropDownVo<>(leaveType.getChineseName(), leaveType.getLeaveType()))
+                .collect(Collectors.toList());
+        return new ApiResponse<>(data);
+    }
+
+    @Operation(summary = "取得非自動排程的假別列表", description = "取得非自動排程的假別列表API")
+    @GetMapping(path = "/getNonAutoScheduledLeaveType")
+    public ApiResponse<List<DropDownVo<String>>> getNonAutoScheduledLeaveTypes() {
+        List<DropDownVo<String>> data = Stream.of(LeaveType.values())
+                .filter(leaveType -> !leaveType.isAutoScheduled())
+                .map(leaveType -> new DropDownVo<>(leaveType.getChineseName(), leaveType.getLeaveType()))
+                .collect(Collectors.toList());
+        return new ApiResponse<>(data);
+    }
 //
 //    @Operation(summary = "取得公告狀態列表", description = "取得公告狀態列表API")
 //    @GetMapping(path = "/getNoticeStatus")
@@ -196,13 +196,5 @@ public class EnumController {
 //                .collect(Collectors.toList());
 //        return new ApiResponse<>(data);
 //    }
-//
-//    @Operation(summary = "取得公司列表", description = "取得公司列表 API")
-//    @GetMapping(path = "/getCompanyType")
-//    public ApiResponse<List<DropDownVo<Byte>>> getCompanyType() {
-//        List<DropDownVo<Byte>> data = Stream.of(CompanyType.values())
-//                .map(company -> new DropDownVo<>(company.getName(), company.getValue()))
-//                .collect(Collectors.toList());
-//        return new ApiResponse<>(data);
-//    }
+
 }

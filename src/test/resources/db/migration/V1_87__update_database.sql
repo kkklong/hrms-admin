@@ -1,0 +1,5 @@
+ALTER TABLE department
+    ADD COLUMN company TINYINT NOT NULL DEFAULT 1 COMMENT '所屬公司：0=共通, 1=TG, 2=EG';
+
+ALTER TABLE employee
+    ADD COLUMN company TINYINT NOT NULL DEFAULT 1 COMMENT '所屬公司：0=共通, 1=TG, 2=EG';

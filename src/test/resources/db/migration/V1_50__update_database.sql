@@ -1,0 +1,1 @@
+update employee set password = MD5(password) where id >= 1;

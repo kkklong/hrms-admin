@@ -47,14 +47,13 @@ public interface ApprovalFlowConfigMapper {
     }
 
     default List<ScopeTypeVO> enumToScopeTypeVOs() {
-        List<ScopeTypeVO> list = Arrays.stream(ScopeType.values())
+        return Arrays.stream(ScopeType.values())
                 .map(e -> new ScopeTypeVO(
                         e.getName(),
                         e.name()
                 ))
                 .collect(Collectors.toList());
-        list.forEach(vo -> System.out.println("vo = " + vo ));
-        return list;
+//        list.forEach(vo -> System.out.println("vo = " + vo ));
     }
 
     // Enum 轉 VO，過濾 COMMON

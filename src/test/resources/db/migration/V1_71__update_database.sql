@@ -1,0 +1,1 @@
+alter table attendance_summary_report drop column full_attendance_status;

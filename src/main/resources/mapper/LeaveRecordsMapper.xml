@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hrms.repository.LeaveRecordsRepository">
+    <select id="findByEmployeeIdsAndStatus" resultType="com.hrms.entity.LeaveRecords">
+        SELECT * FROM leave_records
+        WHERE employee_id IN
+        <foreach item="item" index="index" collection="employeeIds" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        AND status IN
+        <foreach item="statusItem" index="index" collection="status" open="(" separator="," close=")">
+            #{statusItem}
+        </foreach>
+    </select>
+    <select id="findPendingLeaveRecordsByDepartments" parameterType="map" resultType="com.hrms.entity.LeaveRecords">
+        SELECT lr.*
+        FROM leave_records lr
+        JOIN employee e ON lr.employee_id = e.id
+        WHERE lr.approval_stage = #{approvalStage}
+        AND e.department_id IN
+        <foreach item="departmentId" collection="departmentIds" open="(" separator="," close=")">
+            #{departmentId}
+        </foreach>
+    </select>
+</mapper>
