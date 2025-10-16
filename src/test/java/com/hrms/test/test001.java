@@ -8,6 +8,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -20,6 +21,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.IsoFields;
 import java.util.List;
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 public class test001 {
@@ -38,7 +41,7 @@ public class test001 {
         double hours = duration.toHours() + (duration.toMinutesPart() / 60.0);
         System.out.println(hours);  // 输出：8.5
         long lastDayHours = Duration.between(startDateTime, endDateTime).toHours();
-        System.out.println(lastDayHours);
+        System.out.println("lastDayHours: " + lastDayHours);
     }
 
     @Test
@@ -100,4 +103,20 @@ public class test001 {
 //        attendanceRecordsService.calculateAttendanceRecords(LocalDate.parse("2024-11-09"), true);
 //    }
 
+        @Test
+    public void redisTest() {
+            String key = "testKey";
+            String value = "testValue";
+
+            RedisTemplate redisTemplate = new RedisTemplate();
+
+            // 存入數據
+            redisTemplate.opsForValue().set(key, value);
+
+            // 獲取數據
+            Object result = redisTemplate.opsForValue().get(key);
+
+            // 驗證結果
+            assertEquals(value, result);
+    }
 }

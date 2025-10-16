@@ -36,14 +36,12 @@ import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -107,52 +105,72 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
     /**
      * 依選定的區間日期給予區間範圍的資料
      */
-    public java.util.List<ShiftSchedulePeriodVo> getShiftSchedulePeriods(LocalDate startDate, LocalDate endDate) {
-        java.util.List<ShiftSchedulePeriodVo> periods = new ArrayList<>();
+    public List<ShiftSchedulePeriodVo> getShiftSchedulePeriods(LocalDate startDate, LocalDate endDate) {
+        List<ShiftSchedulePeriodVo> periods = new ArrayList<>();
 
         if (startDate.isAfter(endDate)) {
             throw new ServiceException(ErrorCode.END_TIME_EARLIER_THAN_START);
         }
 
         // 查詢特定日期範圍的預設班表，按日期排序
-        ShiftSchedules shiftSchedules = shiftSchedulesRepository.selectOne(new LambdaQueryWrapper<ShiftSchedules>()
-                .eq(ShiftSchedules::getEmployeeId, 1)
-                .orderByAsc(ShiftSchedules::getShiftDate)
-                .last("limit 1")
-        );
+//        ShiftSchedules shiftSchedules = shiftSchedulesRepository.selectOne(new LambdaQueryWrapper<ShiftSchedules>()
+//                .eq(ShiftSchedules::getEmployeeId, 1)
+//                .orderByAsc(ShiftSchedules::getShiftDate)
+//                .last("limit 1")
+//        );
 
-        if (shiftSchedules.getShiftDate().isAfter(startDate)) {
+//        if (shiftSchedules.getShiftDate().isAfter(startDate)) {
+//            throw new ServiceException(ErrorCode.INVALID_PERIOD_START_DATE);
+//        }
+
+        if (startDate.isBefore(LocalDate.parse("2023-12-31"))) {
             throw new ServiceException(ErrorCode.INVALID_PERIOD_START_DATE);
         }
 
         LocalDate periodStartDate = startDate.with(DayOfWeek.MONDAY);
         LocalDate periodEndDate;
 
-        LocalDate firstDate = shiftSchedules.getShiftDate().with(DayOfWeek.MONDAY);
-        long days = ChronoUnit.DAYS.between(firstDate, periodStartDate);
-//        log.info("periodStartDate: {}, firstDate: {}", periodStartDate, firstDate);
-//        log.info("days: {}", days);
-//        log.info("intValue: {}", shiftSchedules.getWeekType().intValue());
-        if ((shiftSchedules.getWeekType().intValue() + days / 7) % 2 == 0) {
+//        LocalDate firstDate = shiftSchedules.getShiftDate().with(DayOfWeek.MONDAY);
+//        long days = ChronoUnit.DAYS.between(firstDate, periodStartDate);
+////        log.info("periodStartDate: {}, firstDate: {}", periodStartDate, firstDate);
+////        log.info("days: {}", days);
+////        log.info("intValue: {}", shiftSchedules.getWeekType().intValue());
+//        if ((shiftSchedules.getWeekType().intValue() + days / 7) % 2 == 0) {
+//            periodStartDate = periodStartDate.minusWeeks(1);
+//        }
+
+//        do {
+//            periodEndDate = periodStartDate.plusWeeks(1).with(DayOfWeek.SUNDAY);
+//            List<ShiftSchedulePeriodHolidayVo> shiftSchedulePeriodHolidayVos = shiftSchedulesRepository.queryDefaultHolidays(periodStartDate, periodEndDate);
+//
+//            ShiftSchedulePeriodVo period = new ShiftSchedulePeriodVo(periodStartDate, periodEndDate, shiftSchedulePeriodHolidayVos);
+//            periods.add(period);
+//
+//            periodStartDate = periodEndDate.plusDays(1);
+//        } while (periodStartDate.isBefore(endDate) || periodStartDate.isEqual(endDate));
+
+        Byte periodStartDateWorkType = shiftSchedulesRepository.getWeekType(periodStartDate);
+        if (periodStartDateWorkType == 2) {
             periodStartDate = periodStartDate.minusWeeks(1);
         }
-
         do {
             periodEndDate = periodStartDate.plusWeeks(1).with(DayOfWeek.SUNDAY);
-            java.util.List<ShiftSchedulePeriodHolidayVo> shiftSchedulePeriodHolidayVos = shiftSchedulesRepository.queryDefaultHolidays(periodStartDate, periodEndDate);
+            List<ShiftSchedulePeriodHolidayVo> shiftSchedulePeriodHolidayVos = shiftSchedulesRepository.queryDefaultHolidays(periodStartDate, periodEndDate);
 
             ShiftSchedulePeriodVo period = new ShiftSchedulePeriodVo(periodStartDate, periodEndDate, shiftSchedulePeriodHolidayVos);
             periods.add(period);
 
             periodStartDate = periodEndDate.plusDays(1);
-        } while (periodStartDate.isBefore(endDate) || periodStartDate.isEqual(endDate));
+        } while (!periodStartDate.isAfter(endDate));
+
+
         return periods;
     }
 
     /**
      * 儲存個人排班班表
      */
-    public void savePersonalShiftSchedules(java.util.List<ShiftSchedulesBO> shiftSchedulesBOList) {
+    public void savePersonalShiftSchedules(List<ShiftSchedulesBO> shiftSchedulesBOList) {
         UserInfo userInfo = (UserInfo) SecurityUtils.getSubject().getPrincipal();
         Integer currentEmployeeId = userInfo.getId();
 
@@ -160,7 +178,7 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
             throw new ServiceException(ErrorCode.EMPTY_SHIFT_SCHEDULES);
         }
         //只能儲存自己的排班班表
-        Map<Integer, java.util.List<ShiftSchedulesBO>> sortAndGroupByEmployee = sortAndGroupByEmployee(shiftSchedulesBOList);
+        Map<Integer, List<ShiftSchedulesBO>> sortAndGroupByEmployee = sortAndGroupByEmployee(shiftSchedulesBOList);
         Set<Integer> integers = sortAndGroupByEmployee.keySet();
         if (sortAndGroupByEmployee.size() != 1 || !integers.contains(currentEmployeeId)) {
             throw new ServiceException(ErrorCode.NO_PERMISSION);
@@ -170,8 +188,36 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
 
         validateShiftSchedules(sortAndGroupByEmployee);
 
-        java.util.List<ShiftSchedules> shiftSchedulesList = convert(shiftSchedulesBOList);
+        List<ShiftSchedules> shiftSchedulesList = convert(shiftSchedulesBOList);
 
+        //檢測排班國定假日數量
+        Map<YearMonth, List<ShiftSchedules>> byMonth = shiftSchedulesList.stream()
+                .collect(Collectors.groupingBy(s -> YearMonth.from(s.getShiftDate())));
+
+        for (Map.Entry<YearMonth, List<ShiftSchedules>> e : byMonth.entrySet()) {
+            YearMonth ym = e.getKey();
+            LocalDate monthStart = ym.atDay(1);
+            LocalDate monthEnd = ym.atEndOfMonth();
+
+            //取得員工該月既有的班表
+            List<ShiftSchedules> dbMonth = shiftSchedulesRepository
+                    .findByEmployeeIdAndShiftDateBetween(currentEmployeeId, monthStart, monthEnd);
+
+            // 合併班表
+            Map<LocalDate, ShiftSchedules> merged = new LinkedHashMap<>();
+            for (ShiftSchedules s : dbMonth) {
+                if (s.getEmployeeId().equals(currentEmployeeId)) {
+                    merged.put(s.getShiftDate(), s);
+                }
+            }
+            for (ShiftSchedules s : e.getValue()) {
+                merged.put(s.getShiftDate(), s);
+            }
+            List<ShiftSchedules> monthMerged = new ArrayList<>(merged.values());
+
+            // 班表檢查
+            checkNationalHolidaySchedules(monthMerged, monthStart, monthEnd);
+        }
         updateBatchById(shiftSchedulesList);
     }
 
@@ -179,7 +225,7 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
     /**
      * 手動調整排班班表
      */
-    public void manuallyAdjustShiftSchedules(java.util.List<ShiftSchedulesBO> shiftSchedulesBOList) {
+    public void manuallyAdjustShiftSchedules(List<ShiftSchedulesBO> shiftSchedulesBOList) {
         UserInfo userInfo = (UserInfo) SecurityUtils.getSubject().getPrincipal();
         Employee currentEmployee = employeeRepository.selectById(userInfo.getId());
         // 組長只能編輯自己部門的排班
@@ -190,15 +236,38 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
             throw new ServiceException(ErrorCode.EMPTY_SHIFT_SCHEDULES);
         }
 
-        Map<Integer, java.util.List<ShiftSchedulesBO>> sortAndGroupByEmployee = sortAndGroupByEmployee(shiftSchedulesBOList);
+        Map<Integer, List<ShiftSchedulesBO>> sortAndGroupByEmployee = sortAndGroupByEmployee(shiftSchedulesBOList);
 
         validateShiftSchedulesData(sortAndGroupByEmployee, currentDepartmentId, false);
 
         // 進行排班檢核
         validateShiftSchedules(sortAndGroupByEmployee);
 
-        java.util.List<ShiftSchedules> shiftSchedulesList = convert(shiftSchedulesBOList);
+        // 排班數據的日期範圍
+        LocalDate startDate = shiftSchedulesBOList.stream().map(ShiftSchedulesBO::getShiftDate).min(LocalDate::compareTo).orElse(null);
+        LocalDate endDate = shiftSchedulesBOList.stream().map(ShiftSchedulesBO::getShiftDate).max(LocalDate::compareTo).orElse(null);
 
+        // 查询现有排班数据
+        List<ShiftSchedules> existingShifts = shiftSchedulesRepository.selectList(
+                new LambdaQueryWrapper<ShiftSchedules>()
+                        .between(ShiftSchedules::getShiftDate, startDate, endDate)
+                        .in(ShiftSchedules::getEmployeeId, shiftSchedulesBOList.stream().map(ShiftSchedulesBO::getEmployeeId).collect(Collectors.toSet()))
+        );
+
+        // 將現有排班數據轉換為Map，以便後續比對異動
+        Map<Integer, ShiftSchedules> existingShiftsMap = existingShifts.stream()
+                .collect(Collectors.toMap(ShiftSchedules::getId, shift -> shift));
+
+        // 比對異動的班別是否與現有班別相同，不同則記錄異動
+        for (ShiftSchedulesBO bo : shiftSchedulesBOList) {
+            ShiftSchedules existingShift = existingShiftsMap.get(bo.getId());
+            if (existingShift != null && !existingShift.getShiftTypes().equals(bo.getShiftTypes())) {
+                log.info("排班變更 - 操作者: {}, 操作时间: {}, 班別時間: {}, 從: {}, 變更為: {}",
+                        userInfo.getAccount(), LocalDateTime.now(), bo.getShiftDate(), existingShift.getShiftTypes(), bo.getShiftTypes());
+            }
+        }
+
+        List<ShiftSchedules> shiftSchedulesList = convert(shiftSchedulesBOList);
         // 執行批次更新
         updateBatchById(shiftSchedulesList);
     }
@@ -206,10 +275,10 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
     /**
      * 將 ShiftSchedulesBO 列表轉換為 ShiftSchedules 列表
      */
-    public java.util.List<ShiftSchedules> convert(java.util.List<ShiftSchedulesBO> shiftSchedulesBOList) {
+    public List<ShiftSchedules> convert(List<ShiftSchedulesBO> shiftSchedulesBOList) {
 
         // 獲取所有 config配置的班別及假日類型
-        java.util.List<Config> configs = new ArrayList<>();
+        List<Config> configs = new ArrayList<>();
         configs.addAll(configService.getShiftType());
         configs.addAll(configService.getHoliday());
         Set<String> configTypes = configs.stream()
@@ -233,19 +302,19 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
     /**
      * 排班檢核處理(連續工作天數和最低休息時間)
      */
-    private void validateShiftSchedules(Map<Integer, java.util.List<ShiftSchedulesBO>> shiftSchedulesMap) {
+    private void validateShiftSchedules(Map<Integer, List<ShiftSchedulesBO>> shiftSchedulesMap) {
 
         // 每個員工分別進行檢核
-        for (Map.Entry<Integer, java.util.List<ShiftSchedulesBO>> entry : shiftSchedulesMap.entrySet()) {
+        for (Map.Entry<Integer, List<ShiftSchedulesBO>> entry : shiftSchedulesMap.entrySet()) {
             Integer employeeId = entry.getKey();
-            java.util.List<ShiftSchedulesBO> employeeShifts = entry.getValue();
+            List<ShiftSchedulesBO> employeeShifts = entry.getValue();
 
             // 取得班表的日期範圍
             LocalDate startDate = employeeShifts.getFirst().getShiftDate();
             LocalDate endDate = employeeShifts.getLast().getShiftDate();
 
             // 查詢員工在整個時間區間內的班表，包括前一週的班表(後一週班表不列入，因為可能還沒排班)
-            java.util.List<ShiftSchedules> allShifts = shiftSchedulesRepository.selectList(new LambdaQueryWrapper<ShiftSchedules>()
+            List<ShiftSchedules> allShifts = shiftSchedulesRepository.selectList(new LambdaQueryWrapper<ShiftSchedules>()
                     .eq(ShiftSchedules::getEmployeeId, employeeId)
                     .between(ShiftSchedules::getShiftDate, startDate.minusDays(7), endDate));
 
@@ -273,7 +342,7 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
             String line;
-            java.util.List<ShiftSchedules> shiftSchedulesList = new ArrayList<>();
+            List<ShiftSchedules> shiftSchedulesList = new ArrayList<>();
 
             // 解析 CSV 標頭
             reader.readLine();
@@ -290,10 +359,10 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
             }
 
             // 一次性查詢所有在職員工
-            java.util.List<Employee> employees = employeeRepository.findAllActiveEmployees();
+            List<Employee> employees = employeeRepository.findAllActiveEmployees();
 
             // 一次性查詢所有部門資料
-            java.util.List<Department> departments = departmentRepository.selectList(null);
+            List<Department> departments = departmentRepository.selectList(null);
 
             // 將部門 ID 和部門對應起來，方便後續快速查找
             Map<Integer, Department> departmentMap = departments.stream()
@@ -401,7 +470,7 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
      * 更新指定範圍內的班表的 `action_type`
      */
     private void updateSchedules(LocalDate startDate, LocalDate endDate, byte actionType) {
-        java.util.List<ShiftSchedules> overlappingSchedules = shiftSchedulesRepository.selectList(
+        List<ShiftSchedules> overlappingSchedules = shiftSchedulesRepository.selectList(
                 new QueryWrapper<ShiftSchedules>().between("shift_date", startDate, endDate)
         );
         if (!overlappingSchedules.isEmpty()) {
@@ -422,7 +491,7 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
         }
 
         // 以admin班表為新員工的預設班表
-        java.util.List<ShiftSchedules> adminShiftSchedules = shiftSchedulesRepository.selectList(
+        List<ShiftSchedules> adminShiftSchedules = shiftSchedulesRepository.selectList(
                 new QueryWrapper<ShiftSchedules>()
                         .eq("employee_id", 1)
                         .ge("shift_date", employeeEntryDate)
@@ -433,7 +502,7 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
         }
 
         // 創建新員工的班表
-        java.util.List<ShiftSchedules> newEmployeeShiftSchedules = new ArrayList<>();
+        List<ShiftSchedules> newEmployeeShiftSchedules = new ArrayList<>();
 
         for (ShiftSchedules adminShiftSchedule : adminShiftSchedules) {
             ShiftSchedules newShiftSchedule = new ShiftSchedules();
@@ -474,7 +543,7 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
      */
     public void validateFileType(MultipartFile file) throws IOException {
 
-        java.util.List<String> allowedMimeTypes = Arrays.asList("text/csv", "text/plain");
+        List<String> allowedMimeTypes = Arrays.asList("text/csv", "text/plain");
         // 使用 Tika 檢測文件的 MIME 類型
         Tika tika = new Tika();
         String mimeType = tika.detect(file.getInputStream());
@@ -487,7 +556,7 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
     /**
      * 根據起始和結束日期和部門ID查詢對應的排班資料
      */
-    public java.util.List<ShiftSchedulesVO> queryByPeriodAndDepartment(LocalDate startDate, LocalDate endDate, Integer departmentId) {
+    public List<ShiftSchedulesVO> queryByPeriodAndDepartment(LocalDate startDate, LocalDate endDate, Integer departmentId) {
 
         UserInfo userInfo = (UserInfo) SecurityUtils.getSubject().getPrincipal();
         Integer employeeId = userInfo.getId();
@@ -503,7 +572,7 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
         }
         if (startDate == null || endDate == null) {
             LocalDate today = LocalDate.now();
-            java.util.List<ShiftSchedulePeriodVo> periods = getShiftSchedulePeriods(today, today);
+            List<ShiftSchedulePeriodVo> periods = getShiftSchedulePeriods(today, today);
             if (!periods.isEmpty()) {
                 ShiftSchedulePeriodVo period = periods.getFirst();
                 startDate = period.getStartDate();
@@ -515,7 +584,7 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
                 .collect(Collectors.toMap(Employee::getId, e -> e));
 
         // 預先查詢所有班別的色碼並存入 Map
-        java.util.List<Config> configs = new ArrayList<>();
+        List<Config> configs = new ArrayList<>();
         configs.addAll(configService.getShiftType());
         configs.addAll(configService.getHoliday());
         Map<String, String> shiftColorMap = configs.stream()
@@ -523,13 +592,14 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
                 .collect(Collectors.toMap(Config::getConfigKey, Config::getConfigValue5));
 
         // 調用repository查詢符合條件的排班資料
-        java.util.List<ShiftSchedules> shiftSchedulesList = shiftSchedulesRepository.queryByDepartmentAndDateRange(actualDepartmentId, startDate, endDate);
+        List<ShiftSchedules> shiftSchedulesList = shiftSchedulesRepository.queryByDepartmentAndDateRange(actualDepartmentId, startDate, endDate);
 
         return shiftSchedulesList.stream()
                 .map(shiftSchedule -> {
                     Employee employee = employeeMap.get(shiftSchedule.getEmployeeId()); // 取得對應的員工資料
                     ShiftSchedulesVO shiftSchedulesVO = ShiftSchedulesMapper.INSTANCE.shiftSchedulesToShiftSchedulesVO(shiftSchedule, employee, department);
                     shiftSchedulesVO.setShiftColorCode(shiftColorMap.get(shiftSchedule.getShiftTypes()));
+                    shiftSchedulesVO.setEmployeeNumber(employee.getEmployeeNumber());
                     return shiftSchedulesVO;
                 })
                 .toList();
@@ -556,17 +626,17 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
         }
 
         // 查詢月份班表
-        java.util.List<ShiftSchedules> schedulesByMonth = shiftSchedulesRepository.queryByDepartmentAndDateRange(departmentId, firstDayOfNextMonth, lastDayOfNextMonth);
+        List<ShiftSchedules> schedulesByMonth = shiftSchedulesRepository.queryByDepartmentAndDateRange(departmentId, firstDayOfNextMonth, lastDayOfNextMonth);
 
         //將月份班表轉成雙週制班表
-        java.util.List<ShiftSchedulePeriodVo> periods = getShiftSchedulePeriods(firstDayOfNextMonth, lastDayOfNextMonth);
+        List<ShiftSchedulePeriodVo> periods = getShiftSchedulePeriods(firstDayOfNextMonth, lastDayOfNextMonth);
         LocalDate fullMonthStartDate = periods.getFirst().getStartDate(); // 第一筆雙週的開始日期
         LocalDate fullMonthEndDate = periods.getLast().getEndDate(); // 最後一筆雙週的結束日期
-        java.util.List<ShiftSchedules> schedulesByTwoWeek = shiftSchedulesRepository.queryByDepartmentAndDateRange(departmentId, fullMonthStartDate, fullMonthEndDate);
-        java.util.List<ShiftSchedulesBO> scheduleBOList = schedulesByTwoWeek.stream()
+        List<ShiftSchedules> schedulesByTwoWeek = shiftSchedulesRepository.queryByDepartmentAndDateRange(departmentId, fullMonthStartDate, fullMonthEndDate);
+        List<ShiftSchedulesBO> scheduleBOList = schedulesByTwoWeek.stream()
                 .map(ShiftSchedulesMapper.INSTANCE::shiftSchedulesToShiftSchedulesBO)
                 .toList();
-        Map<Integer, java.util.List<ShiftSchedulesBO>> sortAndGroupByEmployee = sortAndGroupByEmployee(scheduleBOList);
+        Map<Integer, List<ShiftSchedulesBO>> sortAndGroupByEmployee = sortAndGroupByEmployee(scheduleBOList);
 
         // 檢查雙週制排班
         validateShiftSchedulesData(sortAndGroupByEmployee, null, false);
@@ -582,9 +652,9 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
     /**
      * 檢查部門員工是否在國定假日都有排班
      */
-    private void checkNationalHolidaySchedules(java.util.List<ShiftSchedules> schedules, LocalDate startDate, LocalDate endDate) {
+    private void checkNationalHolidaySchedules(List<ShiftSchedules> schedules, LocalDate startDate, LocalDate endDate) {
 
-        java.util.List<ShiftSchedulePeriodHolidayVo> managerHolidays = shiftSchedulesRepository.queryDefaultHolidays(startDate, endDate);
+        List<ShiftSchedulePeriodHolidayVo> managerHolidays = shiftSchedulesRepository.queryDefaultHolidays(startDate, endDate);
 
         // 計算當月國定假日的總天數
         int nationalHolidayCount = (int) managerHolidays.stream()
@@ -629,8 +699,8 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
      * @param schedules  所有班表
      * @param department 部門資料
      */
-    private void checkShiftCounts(java.util.List<ShiftSchedules> schedules, Department department) {
-        java.util.List<Config> configs = configService.getShiftType();
+    private void checkShiftCounts(List<ShiftSchedules> schedules, Department department) {
+        List<Config> configs = configService.getShiftType();
 
         // 配置的班別時段(早、午、晚)
         Map<String, String> shiftTypeCategoryMap = configs.stream()
@@ -795,7 +865,7 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
         }
 
         // 查詢班表
-        java.util.List<ShiftSchedules> schedules = shiftSchedulesRepository.queryByDepartmentAndDateRange(departmentId, firstDayOfNextMonth, lastDayOfNextMonth);
+        List<ShiftSchedules> schedules = shiftSchedulesRepository.queryByDepartmentAndDateRange(departmentId, firstDayOfNextMonth, lastDayOfNextMonth);
 
         // 將所有班表的 actionType 設為 1
         if (!schedules.isEmpty()) {
@@ -823,7 +893,7 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
         };
     }
 
-    private Map<Integer, java.util.List<ShiftSchedulesBO>> sortAndGroupByEmployee(java.util.List<ShiftSchedulesBO> shiftSchedulesBOList) {
+    private Map<Integer, List<ShiftSchedulesBO>> sortAndGroupByEmployee(List<ShiftSchedulesBO> shiftSchedulesBOList) {
         return shiftSchedulesBOList.stream()
                 .sorted(Comparator.comparing(ShiftSchedulesBO::getShiftDate))
                 .collect(Collectors.groupingBy(ShiftSchedulesBO::getEmployeeId));
@@ -836,19 +906,19 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
      * @param departmentId           限定部門，null就不檢查
      * @param checkLocked            是否檢查鎖定
      */
-    private void validateShiftSchedulesData(Map<Integer, java.util.List<ShiftSchedulesBO>> employeeShiftSchedules
+    private void validateShiftSchedulesData(Map<Integer, List<ShiftSchedulesBO>> employeeShiftSchedules
             , Integer departmentId, boolean checkLocked) {
 
         // 取得所有班別和假日
-        java.util.List<Config> holidayConfigs = configService.getHoliday();
+        List<Config> holidayConfigs = configService.getHoliday();
 
         Set<String> restDayShiftTypes = holidayConfigs.stream()
                 .map(Config::getConfigKey)
                 .collect(Collectors.toSet());
 
-        for (Map.Entry<Integer, java.util.List<ShiftSchedulesBO>> entry : employeeShiftSchedules.entrySet()) {
+        for (Map.Entry<Integer, List<ShiftSchedulesBO>> entry : employeeShiftSchedules.entrySet()) {
             Integer employeeId = entry.getKey();
-            java.util.List<ShiftSchedulesBO> shifts = entry.getValue();
+            List<ShiftSchedulesBO> shifts = entry.getValue();
 
             if (shifts.isEmpty() || shifts.size() % 14 != 0) {
                 throw new ServiceException(ErrorCode.SHIFT_SCHEDULES_WRONG_SIZE);
@@ -856,10 +926,10 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
 
             int[] regularHolidayDaysPerWeek = new int[2]; // [0] 第1週例假日數量，[1] 第2週例假日數量
             int restHolidayDays = 0; // 休假日數量
-            java.util.List<String> violationDetails = new ArrayList<>(); // 收集錯誤資訊
+            List<String> violationDetails = new ArrayList<>(); // 收集錯誤資訊
 
             for (int i = 0; i < shifts.size(); i += 14) {
-                java.util.List<ShiftSchedulesBO> currentGroup = shifts.subList(i, i + 14);
+                List<ShiftSchedulesBO> currentGroup = shifts.subList(i, i + 14);
                 LocalDate previousDate = null;
                 Integer targetMonth = getTargetMonthForCurrentGroup(currentGroup, employeeId);
                 if (checkLocked && targetMonth == null) {
@@ -945,7 +1015,7 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
      * 若全部班表皆鎖定則回傳 null。
      * 此 function 主要用於處理跨月的雙週排班情況(部分班表已鎖定)
      */
-    private Integer getTargetMonthForCurrentGroup(java.util.List<ShiftSchedulesBO> currentGroup, Integer employeeId) {
+    private Integer getTargetMonthForCurrentGroup(List<ShiftSchedulesBO> currentGroup, Integer employeeId) {
         for (ShiftSchedulesBO bo : currentGroup) {
             ShiftSchedules ss = shiftSchedulesRepository.selectOne(
                     new LambdaQueryWrapper<ShiftSchedules>()
@@ -962,11 +1032,11 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
     /**
      * 計算官方雙週例假日數量
      */
-    private int[] getOfficialRegularHolidayDaysPerWeek(java.util.List<ShiftSchedulePeriodVo> officialPeriods) {
+    private int[] getOfficialRegularHolidayDaysPerWeek(List<ShiftSchedulePeriodVo> officialPeriods) {
         int[] officialRegularHolidayDaysPerWeek = new int[2];
 
         ShiftSchedulePeriodVo officialPeriod = officialPeriods.getFirst();
-        java.util.List<ShiftSchedulePeriodHolidayVo> holidays = officialPeriod.getHolidays();
+        List<ShiftSchedulePeriodHolidayVo> holidays = officialPeriod.getHolidays();
 
         if (holidays != null && !holidays.isEmpty()) {
             // 定義第一週結束日（開始日後6天）
@@ -986,10 +1056,10 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
     /**
      * 計算官方雙週休假日數量
      */
-    private int getOfficialTotalRestHolidayDays(java.util.List<ShiftSchedulePeriodVo> officialPeriods) {
+    private int getOfficialTotalRestHolidayDays(List<ShiftSchedulePeriodVo> officialPeriods) {
         int total = 0;
         ShiftSchedulePeriodVo period = officialPeriods.getFirst();
-        java.util.List<ShiftSchedulePeriodHolidayVo> holidays = period.getHolidays();
+        List<ShiftSchedulePeriodHolidayVo> holidays = period.getHolidays();
         if (holidays != null && !holidays.isEmpty()) {
             for (ShiftSchedulePeriodHolidayVo holiday : holidays) {
                 String shiftType = holiday.getShiftTypes();
@@ -1005,9 +1075,9 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
     /**
      * 檢查連續工作天數和最低休息時間
      */
-    private void validateConsecutiveWorkDaysAndRestHours(java.util.List<ShiftSchedules> shifts) {
+    private void validateConsecutiveWorkDaysAndRestHours(List<ShiftSchedules> shifts) {
 
-        java.util.List<Config> shiftTypeConfigs = configService.getShiftType();
+        List<Config> shiftTypeConfigs = configService.getShiftType();
         List<Config> holidayConfigs = configService.getHoliday();
 
         Map<String, Config> shiftTypeMap = shiftTypeConfigs.stream()

@@ -6,6 +6,7 @@ import com.hrms.entity.ShiftSchedules;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.hrms.model.excel.ShiftSchedulesConfig;
 import com.hrms.model.excel.ShiftSchedulesExcel;
+import com.hrms.model.vo.EmployeeShiftSchedulesVO;
 import com.hrms.model.vo.ShiftSchedulePeriodHolidayVo;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -27,10 +28,11 @@ public interface ShiftSchedulesRepository extends BaseMapper<ShiftSchedules> {
     boolean existsByShiftDate(@Param("date") LocalDate date);
 
     @Select("""
-            SELECT * 
-            FROM shift_schedules 
-            WHERE department_id = #{departmentId} 
-              AND shift_date BETWEEN #{startDate} AND #{endDate}
+            SELECT s.*
+            FROM shift_schedules s left join employee e
+			on s.employee_id = e.id
+            WHERE s.department_id = #{departmentId} and e.status = 1
+            AND shift_date BETWEEN #{startDate} AND #{endDate}
             """)
     List<ShiftSchedules> queryByDepartmentAndDateRange(@Param("departmentId") int departmentId,
                                                        @Param("startDate") LocalDate startDate,
@@ -51,6 +53,7 @@ public interface ShiftSchedulesRepository extends BaseMapper<ShiftSchedules> {
             		JOIN config d 
             		on a.shift_types = d.config_key 
             ${ew.customSqlSegment}
+//            and c.role_id != 1
             group by b.department_name, c.nick_name
             """)
     List<ShiftSchedulesExcel> queryShiftSchedulesExcel(@Param(Constants.WRAPPER) QueryWrapper<ShiftSchedules> ew);
@@ -78,4 +81,30 @@ public interface ShiftSchedulesRepository extends BaseMapper<ShiftSchedules> {
             order by shift_date
             """)
     List<ShiftSchedulePeriodHolidayVo> queryDefaultHolidays(LocalDate startDate, LocalDate endDate);
+
+    @Select("""
+            SELECT s.shift_types, s.shift_date, s.status, c.name as shift_name
+            FROM shift_schedules s left join employee e
+			on s.employee_id = e.id
+            left join config c
+            on s.shift_types = c.config_key
+            WHERE s.employee_id = #{employeeId} 
+            AND e.status = 1
+            AND shift_date BETWEEN #{startDate} AND #{endDate}
+            """)
+    List<EmployeeShiftSchedulesVO> queryByEmployeeAndDateRange(@Param("employeeId") int employeeId,
+                                                               @Param("startDate") LocalDate startDate,
+                                                               @Param("endDate") LocalDate endDate);
+
+    @Select("""
+        SELECT s.*
+        FROM shift_schedules s
+        JOIN employee e ON e.id = s.employee_id AND e.status = 1
+        WHERE s.employee_id = #{employeeId}
+          AND s.shift_date BETWEEN #{startDate} AND #{endDate}
+        ORDER BY s.shift_date
+        """)
+    List<ShiftSchedules> findByEmployeeIdAndShiftDateBetween(@Param("employeeId") int employeeId,
+                                                             @Param("startDate") LocalDate startDate,
+                                                             @Param("endDate") LocalDate endDate);
 }

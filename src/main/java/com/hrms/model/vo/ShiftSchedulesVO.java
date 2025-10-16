@@ -49,4 +49,7 @@ public class ShiftSchedulesVO implements Serializable {
 
     @Schema(type = "String", description = "班別色碼")
     private String shiftColorCode;
+
+    @Schema(type = "String", description = "員工編號")
+    private String employeeNumber;
 }
