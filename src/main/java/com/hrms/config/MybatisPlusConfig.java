@@ -10,7 +10,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@MapperScan("com.hrms.repository")
+@MapperScan({
+        "com.hrms.repository",
+        "com.hrms.common.alertRecipient.repository"
+})
 public class MybatisPlusConfig {
 
     /**

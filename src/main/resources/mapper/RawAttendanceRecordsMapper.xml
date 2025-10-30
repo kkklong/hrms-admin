@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hrms.repository.RawAttendanceRecordsRepository">
+
+    <sql id="commonQueryClause">
+        FROM raw_attendance_records r
+        LEFT JOIN employee e ON r.account = e.account and e.id != 1
+        WHERE 1=1
+        <if test="account != null and account != ''">
+            AND r.account = #{account}
+        </if>
+        <if test="startDate != null">
+            AND date_time >= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND date_time &lt;= #{endDate}
+        </if>
+    </sql>
+
+    <select id="query" resultType="com.hrms.model.vo.RawAttendanceRecordsVO">
+        SELECT r.account, MIN(date_time) as firstCheckInTime, MAX(date_time) as lastCheckOutTime
+        <include refid="commonQueryClause" />
+        GROUP BY r.account, DATE(date_time)
+        ORDER BY firstCheckInTime
+    </select>
+
+    <select id="queryRemote" resultType="com.hrms.model.vo.RawAttendanceRecordsVO">
+        SELECT r.account,
+        MIN(date_time) AS firstCheckInTime,
+        MAX(date_time) AS lastCheckOutTime
+        <include refid="commonQueryClause"/>
+        AND r.raw_data LIKE 'remote%'
+        GROUP BY r.account, DATE(date_time)
+        ORDER BY firstCheckInTime
+    </select>
+
+    <select id="queryAll" resultType="com.hrms.model.vo.RawAttendanceRecordsVO">
+        SELECT r.account, date_time as firstCheckInTime
+        <include refid="commonQueryClause" />
+        ORDER BY firstCheckInTime
+    </select>
+
+    <select id="queryAllRemote" resultType="com.hrms.model.vo.RawAttendanceRecordsVO">
+        SELECT r.account,
+        date_time AS firstCheckInTime
+        <include refid="commonQueryClause"/>
+        AND r.raw_data LIKE 'remote%'
+        ORDER BY firstCheckInTime
+    </select>
+
+    <select id="getEmployeeAttendance" resultType="com.hrms.model.vo.RawAttendanceRecordsVO">
+        SELECT r.account, MIN(date_time) as firstCheckInTime, MAX(date_time) as lastCheckOutTime
+        FROM raw_attendance_records r LEFT JOIN employee e ON r.account = e.account and e.id != 1
+        WHERE r.date_time between #{startDate} and #{endDate} and e.id = #{employeeId}
+    </select>
+</mapper>
