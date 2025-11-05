@@ -1,5 +1,6 @@
 package com.hrms.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hrms.common.alertRecipient.service.AttendanceAlertRecipientService;
 import com.hrms.common.telegram.TelegramService;
@@ -17,6 +18,7 @@ import com.hrms.repository.RawAttendanceRecordsRepository;
 import jakarta.annotation.Resource;
 import jakarta.mail.MessagingException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.exceptions.PersistenceException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,8 +26,11 @@ import java.io.UnsupportedEncodingException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * RawAttendanceRecordsService 處理原始打卡資料相關的業務邏輯。
@@ -52,6 +57,7 @@ public class RawAttendanceRecordsService extends ServiceImpl<RawAttendanceRecord
     private EmailService emailService;
     @Resource
     private TelegramService telegramService;
+
 //    @Resource
 //    private AttendanceAlertRecipientService attendanceAlertRecipientService;
 
@@ -185,6 +191,62 @@ public class RawAttendanceRecordsService extends ServiceImpl<RawAttendanceRecord
     }
 
     // ---- 測試用dao ----
-    public void updaterawAttendance(RawAttendanceRecordsVO rawAttendanceRecordsVO) {
+
+    public List<RawAttendanceRecords> voToEntities(List<RawAttendanceRecordsVO> voList) {
+        List<RawAttendanceRecords> entities = new ArrayList<>();
+
+        for (RawAttendanceRecordsVO vo : voList) {
+            String account = vo.getAccount();
+
+            if (vo.getFirstCheckInTime() != null) {
+                RawAttendanceRecords checkInRecord = new RawAttendanceRecords();
+                checkInRecord.setAccount(account);
+                checkInRecord.setDateTime(vo.getFirstCheckInTime());
+                entities.add(checkInRecord);
+            }
+
+            if (vo.getLastCheckOutTime() != null) {
+                RawAttendanceRecords checkOutRecord = new RawAttendanceRecords();
+                checkOutRecord.setAccount(account);
+                checkOutRecord.setDateTime(vo.getLastCheckOutTime());
+                entities.add(checkOutRecord);
+            }
+        }
+        return entities;
+    }
+
+    public boolean updaterawAttendance(List<RawAttendanceRecords> raws, LocalDateTime startDate, LocalDateTime endDate) {
+        try {
+            if (raws.isEmpty()) {
+                return false;
+            }
+
+            // 查詢該時間區間內，這些帳號的現有資料
+            List<RawAttendanceRecords> existList = rawAttendanceRecordsRepository.selectList(
+                    new QueryWrapper<RawAttendanceRecords>()
+                            .in("account", raws.stream()
+                                    .map(RawAttendanceRecords::getAccount)
+                                    .collect(Collectors.toSet()))
+                            .between("date_time", startDate, endDate)
+            );
+            // 組合現有資料的 key (account + dateTime)
+            Set<String> existKeys = existList.stream()
+                    .map(e -> e.getAccount() + "|" + e.getDateTime())
+                    .collect(Collectors.toSet());
+
+            // 過濾掉已存在的資料
+            List<RawAttendanceRecords> filteredList = raws.stream()
+                    .filter(e -> !existKeys.contains(e.getAccount() + "|" + e.getDateTime()))
+                    .toList();
+
+            // 寫入新資料
+            if (!filteredList.isEmpty()) {
+                this.saveBatch(filteredList);
+                return true;
+            }
+        } catch (PersistenceException e) {
+            throw new ServiceException(ErrorCode.DATABASE_ERROR);
+        }
+        return false;
     }
 }

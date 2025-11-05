@@ -19,6 +19,7 @@ import com.hrms.exception.ServiceException;
 import com.hrms.model.RolePermission;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,16 +87,16 @@ public class EmployeeService extends ServiceImpl<EmployeeRepository, Employee> {
             throw new ServiceException(ErrorCode.GENERAL_ERROR);
         }
 
-//        try {
-//            int count = employeeRepository.insert(employee);
-////            if (count == 1) {
-////                leaveSpecialRecordsTemplateService.setLeaveSpecialRecords(employee, LocalDate.now().getYear());
-////                shiftSchedulesService.loadShiftSchedulesToNewEmployee(employee);
-////            }
-//        } catch (DataIntegrityViolationException ex) {
-//            ex.printStackTrace();
-//            throw new ServiceException(ErrorCode.ACCOUNT_ERROR);
-//        }
+        try {
+            int count = employeeRepository.insert(employee);
+//            if (count == 1) {
+//                leaveSpecialRecordsTemplateService.setLeaveSpecialRecords(employee, LocalDate.now().getYear());
+//                shiftSchedulesService.loadShiftSchedulesToNewEmployee(employee);
+//            }
+        } catch (DataIntegrityViolationException ex) {
+            ex.printStackTrace();
+            throw new ServiceException(ErrorCode.ACCOUNT_ERROR);
+        }
     }
 
     public void updateEmployee(EmployeeBO employeeBO) {

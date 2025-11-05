@@ -53,4 +53,13 @@
         FROM raw_attendance_records r LEFT JOIN employee e ON r.account = e.account and e.id != 1
         WHERE r.date_time between #{startDate} and #{endDate} and e.id = #{employeeId}
     </select>
+
+    <insert id="insertIgnoreBatch">
+        INSERT IGNORE INTO raw_attendance_records (date_time, account, raw_data)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.dateTime}, #{item.account}, #{item.rawData})
+        </foreach>
+    </insert>
+
 </mapper>

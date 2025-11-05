@@ -1,8 +1,10 @@
 package com.hrms.controller;
 
 import com.hrms.common.ApiResponse;
+import com.hrms.entity.RawAttendanceRecords;
 import com.hrms.model.bo.DepartmentBO;
 import com.hrms.model.bo.RawAttendanceRecordsBO;
+import com.hrms.model.bo.UpdateAttendanceRequest;
 import com.hrms.model.vo.RawAttendanceRecordsVO;
 import com.hrms.service.RawAttendanceRecordsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,8 +12,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -40,9 +45,10 @@ public class RawAttendanceRecordsController {
 
     // ---- 測試用dao ----
     @Operation(summary = "更新打卡記錄", description = "更新打卡記錄API")
-    @PostMapping(path = "/update")
-    public ApiResponse<String> update(@Valid @RequestBody RawAttendanceRecordsVO rawAttendanceRecordsVO) {
-        rawAttendanceRecordsService.updaterawAttendance(rawAttendanceRecordsVO);
+    @PostMapping(path = "/update", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResponse<String> update(@Valid @RequestBody UpdateAttendanceRequest items) {
+        List<RawAttendanceRecords> raws = rawAttendanceRecordsService.voToEntities(items.getVos());
+        rawAttendanceRecordsService.updaterawAttendance(raws, items.getStartDate(), items.getEndDate());
         return new ApiResponse<>();
     }
 
