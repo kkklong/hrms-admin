@@ -7,6 +7,7 @@ import com.hrms.enums.EmployeeStatus;
 import com.hrms.model.UserInfo;
 import com.hrms.model.bo.LeaveSpecialRecordsBO;
 import com.hrms.model.vo.LeaveSpecialRecordsVO;
+import com.hrms.model.vo.LeaveSpecialRecordsVO2;
 import com.hrms.service.EmployeeService;
 import com.hrms.service.LeaveSpecialRecordsService;
 import com.hrms.service.LeaveSpecialRecordsTemplateService;
@@ -79,6 +80,17 @@ public class LeaveSpecialRecordsController {
     public ApiResponse<List<LeaveSpecialRecordsVO>> getAll() {
         List<LeaveSpecialRecordsVO> leaveSpecialRecordsVOs = leaveSpecialRecordsService.getAllLeaveSpecialRecords();
         return new ApiResponse<>(leaveSpecialRecordsVOs);
+    }
+
+
+    // ---- For UserReview ----
+    @Operation(summary = "查詢現在登入者假別設定", description = "查詢現在登入者假別設定API")
+    @GetMapping(path = "/currentEmployeeLeaveSpecialRecords2")
+    public ApiResponse<List<LeaveSpecialRecordsVO2>> currentEmployeeLeaveSpecialRecords2() {
+        UserInfo userInfo = (UserInfo) SecurityUtils.getSubject().getPrincipal();
+        Integer employeeId = userInfo.getId();
+        List<LeaveSpecialRecordsVO2> leaveSpecialRecordsVO2s = leaveSpecialRecordsService.queryByEmployeeId2(employeeId);
+        return new ApiResponse<>(leaveSpecialRecordsVO2s);
     }
 
 }

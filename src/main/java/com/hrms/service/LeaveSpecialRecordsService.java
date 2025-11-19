@@ -11,6 +11,7 @@ import com.hrms.enums.LeaveType;
 import com.hrms.exception.ServiceException;
 import com.hrms.model.bo.LeaveSpecialRecordsBO;
 import com.hrms.model.vo.LeaveSpecialRecordsVO;
+import com.hrms.model.vo.LeaveSpecialRecordsVO2;
 import com.hrms.repository.DepartmentRepository;
 import com.hrms.repository.EmployeeRepository;
 import com.hrms.repository.LeaveSpecialRecordsRepository;
@@ -79,6 +80,7 @@ public class LeaveSpecialRecordsService extends ServiceImpl<LeaveSpecialRecordsR
 
     /**
      * 申請休假選單用
+     *
      * @param employeeId
      * @return
      */
@@ -118,12 +120,42 @@ public class LeaveSpecialRecordsService extends ServiceImpl<LeaveSpecialRecordsR
                 .toList();
     }
 
+    /**
+     * 員工確認用
+     *
+     * @param employeeId
+     * @return
+     */
+    public List<LeaveSpecialRecordsVO2> queryByEmployeeId2(Integer employeeId) {
+        List<LeaveSpecialRecords> leaveSpecialRecordsList = leaveSpecialRecordsRepository.getByEmployeeId(employeeId);
+        Employee employee = employeeRepository.selectById(employeeId);
+        if (employee == null)
+            throw new ServiceException(ErrorCode.EMPLOYEE_ERROR);
+        Department department = departmentRepository.selectById(employee.getDepartmentId());
+
+        List<LeaveSpecialRecordsVO2> vo2List = leaveSpecialRecordsList.stream()
+                .map(record -> {
+                    LeaveSpecialRecordsVO2 recordVO2 = LeaveSpecialRecordsMapper.INSTANCE.leaveSpecialRecordsToLeaveSpecialRecordsVO2(record, employee, department);
+                    double avalid = leaveRecordsService.calculateAvailableLeaveHours(record);
+                    recordVO2.setMaxLeaveDays((avalid) / 8.0);
+//                    log.info("Avalid: " + avalid);
+                    recordVO2.setChineseName(LeaveType.getChineseNameByLeaveType(record.getLeaveTypes()));
+//                    log.info("ChineseName: {}  recordVO2MaxDays: {}",recordVO2.getChineseName(), recordVO2.getMaxLeaveDays());
+                    return recordVO2;
+                })
+                .filter(recordVO2 -> recordVO2.getMaxLeaveDays() > 0) // 過濾掉剩餘時數為0或小於0的假別紀錄
+                .sorted(Comparator.comparing(LeaveSpecialRecordsVO2::getLeaveTypes))
+                .toList();
+        return vo2List;
+
+    }
+
     //過濾選取假別的最早未過期的假別紀錄
     private List<LeaveSpecialRecords> filterEarliestLeaveByType(List<LeaveSpecialRecords> records, LeaveType... leaveTypes) {
         List<LeaveSpecialRecords> result = new ArrayList<>(records);
 
         for (LeaveType leaveType : leaveTypes) {
-            Optional<LeaveSpecialRecords> matchingRecord =records.stream()
+            Optional<LeaveSpecialRecords> matchingRecord = records.stream()
                     .filter(record -> leaveType.getLeaveType().equals(record.getLeaveTypes())
                             && record.getStartDate().isBefore(LocalDateTime.now())//檢查假別是否生效
                             && record.getEndDate().isAfter(LocalDateTime.now())) // 排除過期的紀錄
