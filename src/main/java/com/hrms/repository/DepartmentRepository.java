@@ -40,4 +40,17 @@ public interface DepartmentRepository extends BaseMapper<Department> {
                   AND e.status = 1
             """)
     List<Employee> findEmployeesByDepartmentName(@Param("keyword") String keyword);
+
+    @Select("""
+        SELECT CASE
+                 WHEN #{shiftTypes} = 'MORNING' THEN every_day_morning_count
+                 WHEN #{shiftTypes} = 'AFTERNOON' THEN every_day_afternoon_count
+                 WHEN #{shiftTypes} = 'NIGHT' THEN every_day_night_count
+                 ELSE 0
+               END
+          FROM department
+         WHERE id = #{deptId}
+    """)
+    int findMinRequired(@Param("deptId") int deptId,
+                        @Param("shiftTypes") String shiftTypes);
 }

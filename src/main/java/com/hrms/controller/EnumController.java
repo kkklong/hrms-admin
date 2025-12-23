@@ -196,5 +196,21 @@ public class EnumController {
 //                .collect(Collectors.toList());
 //        return new ApiResponse<>(data);
 //    }
+    @Operation(summary = "取得班表調整審核階段列表", description = "取得班表調整審核階段列表 API")
+    @GetMapping(path = "/getShiftAdjustmentRequestApprovalStage")
+    public ApiResponse<List<DropDownVo<Byte>>> getShiftAdjustmentRequestApprovalStage() {
+        List<DropDownVo<Byte>> data = Stream.of(ShiftAdjustmentRequestApprovalStage.values())
+                .map(stage -> new DropDownVo<>(stage.getName(), stage.getValue()))
+                .collect(Collectors.toList());
+        return new ApiResponse<>(data);
+    }
 
+    @Operation(summary = "取得班表調整申請狀態列表", description = "取得班表調整申請狀態列表 API")
+    @GetMapping(path = "/getShiftAdjustmentRequestStatus")
+    public ApiResponse<List<DropDownVo<Byte>>> getShiftAdjustmentRequestStatus() {
+        List<DropDownVo<Byte>> data = Stream.of(ShiftAdjustmentRequestStatus.values())
+                .map(status -> new DropDownVo<>(status.getName(), status.getValue()))
+                .collect(Collectors.toList());
+        return new ApiResponse<>(data);
+    }
 }

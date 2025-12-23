@@ -10,6 +10,7 @@ import com.hrms.model.vo.EmployeeShiftSchedulesVO;
 import com.hrms.model.vo.ShiftSchedulePeriodHolidayVo;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -107,4 +108,60 @@ public interface ShiftSchedulesRepository extends BaseMapper<ShiftSchedules> {
     List<ShiftSchedules> findByEmployeeIdAndShiftDateBetween(@Param("employeeId") int employeeId,
                                                              @Param("startDate") LocalDate startDate,
                                                              @Param("endDate") LocalDate endDate);
+
+    /** 計算可上工人數 */
+    @Select("""
+        SELECT COUNT(*) FROM shift_schedules
+         WHERE department_id = #{deptId}
+           AND shift_types = #{shiftTypes}
+           AND shift_date = #{shiftDate}
+           AND status = 0
+    """)
+    int countAvailable(@Param("deptId") int deptId,
+                       @Param("shiftTypes") String shiftTypes,
+                       @Param("shiftDate") LocalDate shiftDate);
+
+    /** 清除暫鎖 */
+    @Update("""
+        UPDATE shift_schedules
+           SET review_lock_request_id = NULL
+         WHERE review_lock_request_id = #{reqId}
+    """)
+    void clearReviewLock(@Param("reqId") Long reqId);
+
+    /** 查暫鎖班表 + 排他鎖 */
+    @Select("""
+        SELECT * FROM shift_schedules
+         WHERE review_lock_request_id = #{reqId}
+         FOR UPDATE
+    """)
+    List<ShiftSchedules> selectByReviewLockRequestIdForUpdate(@Param("reqId") Long reqId);
+
+    /** 單向更新班別 */
+    @Update("""
+        UPDATE shift_schedules
+           SET shift_types = #{targetShiftTypes},
+               department_id = COALESCE(#{targetDepartmentId}, department_id),
+               shift_date = #{targetDate},
+               updated_id = #{updatedId},
+               updated_date = NOW()
+         WHERE id = #{originScheduleId}
+    """)
+    void updateShiftToTarget(@Param("originScheduleId") Long originScheduleId,
+                             @Param("targetShiftTypes") String targetShiftTypes,
+                             @Param("targetDepartmentId") Integer targetDepartmentId,
+                             @Param("targetDate") LocalDate targetDate,
+                             @Param("updatedId") Integer updatedId);
+
+    /** 互換班別 */
+    @Update("""
+        UPDATE shift_schedules AS s1
+          JOIN shift_schedules AS s2
+            ON s1.id = #{idA} AND s2.id = #{idB}
+         SET s1.shift_types = s2.shift_types,
+             s2.shift_types = s1.shift_types
+    """)
+    void swapShiftBetween(@Param("idA") Long idA, @Param("idB") Long idB);
+
+    void updateReviewLock(@Param("reqId") Long reqId, @Param("ids") List<Long> ids);
 }

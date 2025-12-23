@@ -1075,7 +1075,7 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
     /**
      * 檢查連續工作天數和最低休息時間
      */
-    private void validateConsecutiveWorkDaysAndRestHours(List<ShiftSchedules> shifts) {
+    public void validateConsecutiveWorkDaysAndRestHours(List<ShiftSchedules> shifts) {
 
         List<Config> shiftTypeConfigs = configService.getShiftType();
         List<Config> holidayConfigs = configService.getHoliday();

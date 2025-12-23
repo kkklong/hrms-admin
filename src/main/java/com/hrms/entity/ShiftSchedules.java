@@ -94,4 +94,9 @@ public class ShiftSchedules implements Serializable {
      * 班別修改狀態 0:可修改、1:不可修改 (默認:0)
      */
     private Byte actionType;
+
+    /**
+     * 審核暫鎖；指向申請單ID shift_adjustment_request.id
+     */
+    private Long reviewLockRequestId;
 }
