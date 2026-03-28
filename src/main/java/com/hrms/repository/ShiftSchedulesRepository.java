@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
 import com.hrms.entity.ShiftSchedules;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.hrms.model.RemoteAuditShift;
 import com.hrms.model.excel.ShiftSchedulesConfig;
 import com.hrms.model.excel.ShiftSchedulesExcel;
 import com.hrms.model.vo.EmployeeShiftSchedulesVO;
@@ -11,6 +12,7 @@ import com.hrms.model.vo.ShiftSchedulePeriodHolidayVo;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -164,4 +166,48 @@ public interface ShiftSchedulesRepository extends BaseMapper<ShiftSchedules> {
     void swapShiftBetween(@Param("idA") Long idA, @Param("idB") Long idB);
 
     void updateReviewLock(@Param("reqId") Long reqId, @Param("ids") List<Long> ids);
+
+    /**
+     * 查询指定日期的班次安排信息
+     * 该查询从班次表(shift_schedules)中获取特定日期的班次信息，
+     * 并关联远程考勤期表(remote_attendance_period)和配置表(config)
+     * 以获取完整的班次时间信息
+     *
+     * @param dateD 查询的日期参数
+     * @return 返回包含班次ID、日期、类型、开始时间和结束时间的列表
+     */
+    @Select("""
+              SELECT
+                ss.employee_id,         -- 员工ID
+                ss.shift_date,          -- 班次日期
+                ss.shift_types,         -- 班次类型
+                TIMESTAMP(ss.shift_date, c.config_value1) AS startTime,  -- 开始时间(日期+时间)
+                CASE
+                    WHEN TIME(c.config_value1) > TIME(c.config_value2)
+                    THEN TIMESTAMP(DATE_ADD(ss.shift_date, INTERVAL 1 DAY), c.config_value2)
+                    ELSE TIMESTAMP(ss.shift_date, c.config_value2)
+                END AS endTime     -- 结束时间(日期+时间)
+            FROM shift_schedules ss                     -- 班次安排表
+                     JOIN remote_attendance_period rap  -- 远程考勤期表
+                          ON rap.remote_date = ss.shift_date  -- 通过日期关联
+                     JOIN config c ON c.config_key = ss.shift_types  -- 通过班次类型关联配置
+            WHERE ss.status = 0                        -- 只查询状态为0的记录
+              AND ss.shift_date = #{dateD}               -- 指定查询日期
+              AND FIND_IN_SET(ss.shift_types, rap.available_shift_type) > 0  -- 班次类型在远程考勤期范围内
+              AND (
+                  -- 情况1: 不跨日班次，当前时间在同一天的开始和结束时间之间
+                  (TIME(c.config_value1) <= TIME(c.config_value2)
+                   AND NOW() BETWEEN TIMESTAMP(ss.shift_date, c.config_value1)\s
+                                 AND TIMESTAMP(ss.shift_date, c.config_value2))
+                  OR
+                  -- 情况2: 跨日班次，当前时间在开始时间到次日结束时间之间
+                  (TIME(c.config_value1) > TIME(c.config_value2)
+                   AND NOW() BETWEEN TIMESTAMP(ss.shift_date, c.config_value1)
+                                 AND TIMESTAMP(DATE_ADD(ss.shift_date, INTERVAL 1 DAY), c.config_value2))
+              )
+            
+            """)
+    @Cacheable(value = "shiftSchedules", key = "#dateD")
+    List<RemoteAuditShift> queryRemoteAttendancePeriod(@Param("dateD") LocalDate dateD);
+
 }

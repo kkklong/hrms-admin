@@ -27,6 +27,8 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD}
+  cache:
+    type: redis
   flyway:
     url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT}/${MYSQL_DATABASE}
     user: ${MYSQL_USER}
@@ -77,3 +79,9 @@ logging:
 file:
   root:
     dir: ${FILE_ROOT_DIR:hrmFiles}
+
+telegram:
+  bot:
+    username: ${TELEGRAM_BOT_USERNAME:}
+    token: ${TELEGRAM_BOT_TOKEN:}
+    allow-groups: ${TELEGRAM_BOT_ALLOW_GROUPS:}

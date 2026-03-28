@@ -12,6 +12,7 @@ import com.hrms.enums.ShiftScheduleStatus;
 import com.hrms.enums.TimeSlot;
 import com.hrms.exception.ServiceException;
 import com.hrms.model.CsvShiftSchedules;
+import com.hrms.model.RemoteAuditShift;
 import com.hrms.model.ShiftScheduleCounts;
 import com.hrms.model.UserInfo;
 import com.hrms.model.bo.ShiftSchedulesBO;
@@ -1127,6 +1128,16 @@ public class ShiftSchedulesService extends ServiceImpl<ShiftSchedulesRepository,
                 previousShiftEndDateTime = null;
             }
         }
+    }
+
+    /**
+     * 取得遠端需要上班的人員
+     */
+    public List<RemoteAuditShift> getRemoteEmployees(LocalDate date){
+        //取得現在需要上班的班別
+        List<RemoteAuditShift> list = shiftSchedulesRepository.queryRemoteAttendancePeriod(date);
+        list.addAll(shiftSchedulesRepository.queryRemoteAttendancePeriod(date.minusDays(1)));
+        return list;
     }
 
     /**
