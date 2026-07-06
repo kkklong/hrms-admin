@@ -137,7 +137,8 @@ public enum ErrorCode {
     BELOW_THE_LOWER_LIMIT(1129,"調整後人力低於下限，無法送出"),
     SHIFT_LOCKED(1130, "班表已被其他申請單鎖定"),
     APPLICANT_MUST_BE_INVOLVED(1131, "您只能發起包含自己在內的班表調整申請"),
-    SHIFT_ADJUSTMENT_CANCEL_FAIL(1132, "此筆班表調整紀錄無法取消")
+    SHIFT_ADJUSTMENT_CANCEL_FAIL(1132, "此筆班表調整紀錄無法取消"),
+    NO_CHANGES_DETECTED(1133, "設定沒有變更，無需更新")
     ;
     private final int code;
     private final String message;
